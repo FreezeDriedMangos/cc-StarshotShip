@@ -12,13 +12,13 @@ namespace clay.StarshotShip
         private bool EnergyReward1 = false;
         private bool EnergyReward2 = false;
 
-        public virtual void OnTurnStart(State state, Combat combat)
+        public override void OnTurnStart(State state, Combat combat)
         {
             EnergyReward1 = false;
             EnergyReward2 = false;
         }
 
-        public virtual void OnPlayerTakeNormalDamage(State state, Combat combat)
+        public override void OnPlayerTakeNormalDamage(State state, Combat combat)
         {
             if (EnergyReward1) return;
             EnergyReward1 = true;
@@ -33,7 +33,7 @@ namespace clay.StarshotShip
             });
         }
 
-        public virtual void OnPlayerLoseHull(State state, Combat combat, int amount)
+        public override void OnPlayerLoseHull(State state, Combat combat, int amount)
         {
             OnPlayerTakeNormalDamage(state, combat); // just in case the hull damage bypasses normal damage check
 
