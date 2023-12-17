@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,10 +19,12 @@ namespace clay.StarshotShip
             EnergyReward2 = false;
         }
 
-        public override void OnPlayerTakeNormalDamage(State state, Combat combat)
+        public override void OnPlayerTakeNormalDamage(State state, Combat combat, int rawAmount, Part? part)
         {
             if (EnergyReward1) return;
             EnergyReward1 = true;
+
+            MainManifest.Instance.Logger.LogInformation("Player was hit! Awarding energy");
 
             combat.QueueImmediate(new AStatus
             {
@@ -35,7 +38,7 @@ namespace clay.StarshotShip
 
         public override void OnPlayerLoseHull(State state, Combat combat, int amount)
         {
-            OnPlayerTakeNormalDamage(state, combat); // just in case the hull damage bypasses normal damage check
+            this.OnPlayerTakeNormalDamage(state, combat, 0, null); // for when the player takes hull damage that bypasses the normal damage check
 
             if (EnergyReward2) return;
             EnergyReward2 = true;
@@ -49,6 +52,5 @@ namespace clay.StarshotShip
                 artifactPulse = Key()
             });
         }
-
     }
 }
