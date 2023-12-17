@@ -46,8 +46,9 @@ namespace clay.StarshotShip
         {
             var filenames = new string[] {
                 "micrometeorite_adaptation",
-                "starshot_cannon",
                 "starshot_chassis",
+                "starshot_chassis_trimmed",
+                "starshot_cannon",
                 "starshot_cockpit",
                 "starshot_missiles",
                 "starshot_telescopeLeft",
@@ -67,12 +68,13 @@ namespace clay.StarshotShip
         
         public void LoadManifest(IShipPartRegistry registry)
         {
-            RegisterPart(registry, "cannon", "starshot_cannon", Enum.Parse<PType>("cannon"), new Vec());
-            RegisterPart(registry, "cockpit", "starshot_cockpit", Enum.Parse<PType>("cockpit"), new Vec());
-            RegisterPart(registry, "missiles", "starshot_missiles", Enum.Parse<PType>("missiles"), new Vec());
-            RegisterPart(registry, "telescopeLeft", "starshot_telescopeLeft", Enum.Parse<PType>("comms"), new Vec() { x = -5, y = 0 } );
-            RegisterPart(registry, "telescopeCenter", "starshot_telescopeCenter", Enum.Parse<PType>("comms"), new Vec() { x = -23, y = 0 } );
-            RegisterPart(registry, "telescopeRight", "starshot_telescopeRight", Enum.Parse<PType>("comms"), new Vec() { x = -5, y = 0 } );
+            double yOffset = 5;
+            RegisterPart(registry, "cannon", "starshot_cannon", Enum.Parse<PType>("cannon"), new Vec() { x = 0, y = yOffset });
+            RegisterPart(registry, "cockpit", "starshot_cockpit", Enum.Parse<PType>("cockpit"), new Vec() { x = 0, y = yOffset });
+            RegisterPart(registry, "missiles", "starshot_missiles", Enum.Parse<PType>("missiles"), new Vec() { x = 0, y = yOffset });
+            RegisterPart(registry, "telescopeLeft", "starshot_telescopeLeft", Enum.Parse<PType>("comms"), new Vec() { x = -5, y = yOffset } );
+            RegisterPart(registry, "telescopeCenter", "starshot_telescopeCenter", Enum.Parse<PType>("comms"), new Vec() { x = -23, y = yOffset } );
+            RegisterPart(registry, "telescopeRight", "starshot_telescopeRight", Enum.Parse<PType>("comms"), new Vec() { x = -5, y = yOffset } );
             //RegisterPart(registry, "scaffold", "trinity_scaffold", PType.empty);
         }
 
@@ -114,7 +116,7 @@ namespace clay.StarshotShip
                     parts["telescopeCenter"],
                     parts["telescopeRight"]
                 },
-                sprites["starshot_chassis"] ?? throw new Exception(),
+                sprites["starshot_chassis_trimmed"],
                 null
             );
             shipRegistry.RegisterShip(starshot);

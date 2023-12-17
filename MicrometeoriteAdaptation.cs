@@ -12,11 +12,6 @@ namespace clay.StarshotShip
         private bool EnergyReward1 = false;
         private bool EnergyReward2 = false;
 
-        public override int? GetDisplayNumber(State s)
-        {
-            return (int)s.ship.parts[4].offset.x;
-        }
-
         public virtual void OnTurnStart(State state, Combat combat)
         {
             EnergyReward1 = false;
