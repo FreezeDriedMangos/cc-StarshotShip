@@ -15,6 +15,7 @@ using Shockah.Shared;
 
 namespace clay.StarshotShip
 {
+    [HarmonyPatch(typeof(Ship))]
     public class MainManifest : IModManifest, ISpriteManifest, IArtifactManifest, IShipPartManifest, IShipManifest, IStartershipManifest
     {
         public static MainManifest Instance;
@@ -31,6 +32,8 @@ namespace clay.StarshotShip
         public static Dictionary<string, ExternalPart> parts = new Dictionary<string, ExternalPart>();
         public static ExternalShip starshot;
         public static ExternalArtifact micrometeoriteAdaptation;
+
+        public static List<int> PartsDrawOrder = new() { 4, 5, 3, 2, 1, 0 };
 
         public void BootMod(IModLoaderContact contact)
         {
@@ -131,6 +134,36 @@ namespace clay.StarshotShip
             //starshotShip.AddLocalisation("Starshot", "This sciense vessel was originally intended to launch probes into deep space using its laser array. Some \"creative engineering\" has converted the laser array into a laser cannon.");
             starshotShip.AddLocalisation("Starshot", "This sciense vessel built to withstand repeated metorite strikes. As its pilot, don't be afraid to take a hit.");
             registry.RegisterStartership(starshotShip);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(Ship.DrawTopLayer))]
+        public static bool DrawTopLayer(Ship __instance, G g, Vec v, Vec worldPos)
+        {
+            if (__instance.key != MainManifest.Instance.Name + ".Starter")
+            {
+                return true;
+            }
+
+            //Vec vec = worldPos + new Vec(__instance.parts.Count * 16 / 2); // ship center
+
+            //for (int i = 0; i < __instance.parts.Count; i++)
+            foreach (int i in MainManifest.PartsDrawOrder)
+            {
+                Part part = __instance.parts[i];
+                var partxSwoose = 0; // Mutil.MoveTowards(part.xSwoose, 0.0, g.dt * 10.0);
+                Vec vec2 = worldPos + new Vec((double)(i * 16) + part.offset.x + partxSwoose * 16.0, -32.0 + (__instance.isPlayerShip ? part.offset.y : (1.0 + (0.0 - part.offset.y))));
+                Vec vec3 = v + vec2;
+
+                double num3 = 1.0;
+                Vec vec4 = vec3 + new Vec(-1.0, -1.0 + (double)(__instance.isPlayerShip ? 6 : (-6)) * part.pulse).round();
+
+                Color? color2 = new Color(1.0, 1.0, 1.0, num3);
+                Spr? spr = (part.active ? DB.parts : DB.partsOff).GetOrNull(part.skin ?? part.type.Key());
+                Draw.Sprite(spr, vec4.x, vec4.y, part.flip, !__instance.isPlayerShip, 0.0, null, null, null, null, color2);
+            }
+
+            return false;
         }
     }
 }
