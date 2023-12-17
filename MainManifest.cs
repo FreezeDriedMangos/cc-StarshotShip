@@ -137,7 +137,7 @@ namespace clay.StarshotShip
             );
 
             //starshotShip.AddLocalisation("Starshot", "This sciense vessel was originally intended to launch probes into deep space using its laser array. Some \"creative engineering\" has converted the laser array into a laser cannon.");
-            starshotShip.AddLocalisation("Starshot", "This sciense vessel built to withstand repeated metorite strikes. As its pilot, don't be afraid to take a hit.");
+            starshotShip.AddLocalisation("Starshot", "This sciense vessel was built to withstand repeated meteorite strikes. As its pilot, don't be afraid to take a hit.");
             registry.RegisterStartership(starshotShip);
         }
 
