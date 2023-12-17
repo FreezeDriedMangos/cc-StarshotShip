@@ -15,7 +15,7 @@ using Shockah.Shared;
 
 namespace clay.StarshotShip
 {
-    [HarmonyPatch(typeof(Ship))]
+    [HarmonyPatch]
     public class MainManifest : IModManifest, ISpriteManifest, IArtifactManifest, IShipPartManifest, IShipManifest, IStartershipManifest
     {
         public static MainManifest Instance;
@@ -33,7 +33,8 @@ namespace clay.StarshotShip
         public static ExternalShip starshot;
         public static ExternalArtifact micrometeoriteAdaptation;
 
-        public static List<int> PartsDrawOrder = new() { 4, 5, 3, 2, 1, 0 };
+        public static List<int> PartsDrawOrder_NoScaffold = new() { 4, 5, 3, 0, 1, 2 };
+        public static List<int> PartsDrawOrder_Scaffold = new()   { 5, 6, 4, 3, 0, 1, 2 }; // intentionally don't draw the scaffolding, it just looks weird next to the telescope
 
         public void BootMod(IModLoaderContact contact)
         {
@@ -54,6 +55,7 @@ namespace clay.StarshotShip
                 "starshot_telescopeLeft",
                 "starshot_telescopeCenter",
                 "starshot_telescopeRight",
+                "starshot_scaffolding"
             };
 
             foreach (var filename in filenames)
@@ -75,6 +77,7 @@ namespace clay.StarshotShip
             RegisterPart(registry, "telescopeLeft", "starshot_telescopeLeft", Enum.Parse<PType>("comms"), new Vec() { x = -5, y = yOffset } );
             RegisterPart(registry, "telescopeCenter", "starshot_telescopeCenter", Enum.Parse<PType>("comms"), new Vec() { x = -23, y = yOffset } );
             RegisterPart(registry, "telescopeRight", "starshot_telescopeRight", Enum.Parse<PType>("comms"), new Vec() { x = -5, y = yOffset } );
+            RegisterPart(registry, "scaffolding", "starshot_scaffolding", Enum.Parse<PType>("empty"), new Vec() { x = 0, y = yOffset } );
             //RegisterPart(registry, "scaffold", "trinity_scaffold", PType.empty);
         }
 
@@ -130,7 +133,7 @@ namespace clay.StarshotShip
                 starshot.GlobalName,
                 startingArtifacts: new ExternalArtifact[] { micrometeoriteAdaptation },
                 exclusiveArtifacts: new ExternalArtifact[] {},
-                nativeStartingArtifacts: new Type[] { typeof(ShieldPrep) }
+                nativeStartingArtifacts: new Type[] { typeof(ShieldPrep), typeof(RadarSubwoofer) }
             );
 
             //starshotShip.AddLocalisation("Starshot", "This sciense vessel was originally intended to launch probes into deep space using its laser array. Some \"creative engineering\" has converted the laser array into a laser cannon.");
@@ -139,7 +142,7 @@ namespace clay.StarshotShip
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(nameof(Ship.DrawTopLayer))]
+        [HarmonyPatch(typeof(Ship), nameof(Ship.DrawTopLayer))]
         public static bool DrawTopLayer(Ship __instance, G g, Vec v, Vec worldPos)
         {
             if (__instance.key != MainManifest.Instance.Name + ".Starter")
@@ -149,8 +152,15 @@ namespace clay.StarshotShip
 
             //Vec vec = worldPos + new Vec(__instance.parts.Count * 16 / 2); // ship center
 
-            //for (int i = 0; i < __instance.parts.Count; i++)
-            foreach (int i in MainManifest.PartsDrawOrder)
+            if (__instance.parts.Count < 6 || __instance.parts.Count > 8)
+            {
+                // fallback case
+                return true;
+            }
+
+            var order = __instance.parts.Count == 6 ? PartsDrawOrder_NoScaffold : PartsDrawOrder_Scaffold;
+
+            foreach (int i in order)
             {
                 Part part = __instance.parts[i];
                 var partxSwoose = 0; // Mutil.MoveTowards(part.xSwoose, 0.0, g.dt * 10.0);
@@ -166,6 +176,16 @@ namespace clay.StarshotShip
             }
 
             return false;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Events), nameof(Events.AddScaffold))]
+        public static void AddScaffold(State s, ref List<Choice> __result)
+        {
+            if (s.ship.key != MainManifest.Instance.Name + ".Starter") return;
+
+            // tell the scaffolding event what the scaffolding for this ship should look like
+            ((__result[0].actions[0] as AShipUpgrades).actions[0] as AInsertPart).part.skin = "";
         }
     }
 }
