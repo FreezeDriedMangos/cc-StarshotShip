@@ -15,7 +15,7 @@ using Shockah.Shared;
 
 namespace clay.StarshotShip
 {
-    public class MainManifest : IModManifest, ISpriteManifest
+    public class MainManifest : IModManifest, ISpriteManifest, IArtifactManifest, IShipPartManifest, IShipManifest, IStartershipManifest
     {
         public static MainManifest Instance;
 
@@ -29,7 +29,8 @@ namespace clay.StarshotShip
 
         public static Dictionary<string, ExternalSprite> sprites = new Dictionary<string, ExternalSprite>();
         public static Dictionary<string, ExternalPart> parts = new Dictionary<string, ExternalPart>();
-        public static Dictionary<string, ExternalArtifact> artifacts = new Dictionary<string, ExternalArtifact>();
+        public static ExternalShip starshot;
+        public static ExternalArtifact micrometeoriteAdaptation;
 
         public void BootMod(IModLoaderContact contact)
         {
@@ -63,31 +64,73 @@ namespace clay.StarshotShip
         
         public void LoadManifest(IShipPartRegistry registry)
         {
-            parts.Add("cannon", new ExternalPart(
-                "parchment.armada.Trinity.Cannon",
-                new Part()
-                {
-                    active = false,
-                    damageModifier = PDamMod.none,
-                    type = PType.cannon,
-                },
-                sprites["trinity_cannon"],
-                sprites["trinity_cannon_off"]
-            ));
-            registry.RegisterPart(parts["cannon"]);
-
-            addPart("cockpit", "trinity_cockpit", PType.cockpit, false, registry);
-            addPart("missiles", "trinity_missiles", PType.missiles, false, registry);
-            addPart("scaffold", "trinity_scaffold", PType.empty, false, registry);
+            RegisterPart(registry, "cannon", "starshot_cannon", Enum.Parse<PType>("cannon"), new Vec());
+            RegisterPart(registry, "cockpit", "starshot_cockpit", Enum.Parse<PType>("cockpit"), new Vec());
+            RegisterPart(registry, "missiles", "starshot_missiles", Enum.Parse<PType>("missiles"), new Vec());
+            RegisterPart(registry, "telescopeLeft", "starshot_telescopeLeft", Enum.Parse<PType>("comms"), new Vec() { x = -5, y = 0 } );
+            RegisterPart(registry, "telescopeCenter", "starshot_telescopeCenter", Enum.Parse<PType>("comms"), new Vec() { x = -23, y = 0 } );
+            RegisterPart(registry, "telescopeRight", "starshot_telescopeRight", Enum.Parse<PType>("comms"), new Vec() { x = -5, y = 0 } );
+            //RegisterPart(registry, "scaffold", "trinity_scaffold", PType.empty);
         }
 
-        private void RegisterPart(string name, string sprite, PType type, bool flip, IShipPartRegistry registry)
+        private void RegisterPart(IShipPartRegistry registry, string name, string sprite, PType type, Vec offset)
         {
             parts.Add(name, new ExternalPart(
-            "parchment.armada.trinity." + name,
-            new Part() { active = true, damageModifier = PDamMod.none, type = type, flip = flip },
-            sprites[sprite] ?? throw new Exception()));
+                Name + ".part." + name,
+                new Part() { type = type, offset = offset },
+                sprites[sprite] ?? throw new Exception()
+            ));
             registry.RegisterPart(parts[name]);
+        }
+
+        public void LoadManifest(IArtifactRegistry registry)
+        {
+            micrometeoriteAdaptation = new ExternalArtifact(Name + "artifacts.MicrometeoriteAdaptation", typeof(MicrometeoriteAdaptation), sprites["micrometeorite_adaptation"]);
+            micrometeoriteAdaptation.AddLocalisation("MICROMETEORITE ADAPTATION", "The first time you are hit each turn, gain one energy next turn. The first time you take hull damage each turn, gain one additional energy next turn.");
+            registry.RegisterArtifact(micrometeoriteAdaptation);
+        }
+
+        public void LoadManifest(IShipRegistry shipRegistry)
+        {
+            starshot = new ExternalShip(Name + ".Ship",
+                new Ship()
+                {
+                    baseDraw = 5,
+                    baseEnergy = 2,
+                    heatTrigger = 3,
+                    heatMin = 0,
+                    hull = 10,
+                    hullMax = 10,
+                    shieldMaxBase = 5
+                },
+                new ExternalPart[] {
+                    parts["missiles"],
+                    parts["cockpit"],
+                    parts["cannon"],
+                    parts["telescopeLeft"],
+                    parts["telescopeCenter"],
+                    parts["telescopeRight"]
+                },
+                sprites["starshot_chassis"] ?? throw new Exception(),
+                null
+            );
+            shipRegistry.RegisterShip(starshot);
+        }
+
+        public void LoadManifest(IStartershipRegistry registry)
+        {
+            if (starshot == null)
+                return;
+            var starshotShip = new ExternalStarterShip(Name + ".Starter",
+                starshot.GlobalName,
+                startingArtifacts: new ExternalArtifact[] { micrometeoriteAdaptation },
+                exclusiveArtifacts: new ExternalArtifact[] {},
+                nativeStartingArtifacts: new Type[] { typeof(ShieldPrep) }
+            );
+
+            //starshotShip.AddLocalisation("Starshot", "This sciense vessel was originally intended to launch probes into deep space using its laser array. Some \"creative engineering\" has converted the laser array into a laser cannon.");
+            starshotShip.AddLocalisation("Starshot", "This sciense vessel built to withstand repeated metorite strikes. As its pilot, don't be afraid to take a hit.");
+            registry.RegisterStartership(starshotShip);
         }
     }
 }
