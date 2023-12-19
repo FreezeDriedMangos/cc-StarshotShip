@@ -165,8 +165,8 @@ namespace clay.StarshotShip
 
         public void LoadManifest(ICardRegistry registry)
         {
-            micrometeoriteAdaptation = new ExternalCard(Name + ".cards.MicrometeoriteAdaptation", typeof(MicrometeoriteAdaptation), sprites["starshot_card_art"], starshotDeck);
-            micrometeoriteAdaptation.AddLocalisation("Mirror Actuators");
+            micrometeoriteAdaptation = new ExternalCard(Name + ".cards.MicrometeoriteAdaptation", typeof(MicrometeoriteAdaptation), sprites["starshot_card_art"], actualDeck: null);
+            micrometeoriteAdaptation.AddLocalisation("Basic Brace"); 
             registry.RegisterCard(micrometeoriteAdaptation);
         }
 
