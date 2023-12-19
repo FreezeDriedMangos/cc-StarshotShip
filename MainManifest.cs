@@ -16,7 +16,7 @@ using Shockah.Shared;
 namespace clay.StarshotShip
 {
     [HarmonyPatch]
-    public class MainManifest : IModManifest, ISpriteManifest, IArtifactManifest, IShipPartManifest, IShipManifest, IStartershipManifest
+    public class MainManifest : IModManifest, ISpriteManifest, IArtifactManifest, IShipPartManifest, IShipManifest, IStartershipManifest, ICardManifest, IDeckManifest
     {
         public static MainManifest Instance;
 
@@ -30,8 +30,10 @@ namespace clay.StarshotShip
 
         public static Dictionary<string, ExternalSprite> sprites = new Dictionary<string, ExternalSprite>();
         public static Dictionary<string, ExternalPart> parts = new Dictionary<string, ExternalPart>();
-        public static ExternalShip starshot;
-        public static ExternalArtifact micrometeoriteAdaptation;
+        public static ExternalArtifact breakthrough { get; private set; }
+        public static ExternalShip starshot { get; private set; }
+        public static ExternalCard? micrometeoriteAdaptation { get; private set; }
+        public static ExternalDeck? starshotDeck { get; private set; }
 
         public static List<int> PartsDrawOrder_NoScaffold = new() { 4, 5, 3, 0, 1, 2 };
         public static List<int> PartsDrawOrder_Scaffold = new()   { 5, 6, 4, 3, 0, 1, 2 }; // intentionally don't draw the scaffolding, it just looks weird next to the telescope
@@ -47,6 +49,9 @@ namespace clay.StarshotShip
         {
             var filenames = new string[] {
                 "micrometeorite_adaptation",
+                "starshot_card_frame",
+                "starshot_card_art",
+
                 "starshot_chassis",
                 "starshot_chassis_trimmed",
                 "starshot_cannon",
@@ -93,9 +98,9 @@ namespace clay.StarshotShip
 
         public void LoadManifest(IArtifactRegistry registry)
         {
-            micrometeoriteAdaptation = new ExternalArtifact(Name + "artifacts.MicrometeoriteAdaptation", typeof(MicrometeoriteAdaptation), sprites["micrometeorite_adaptation"]);
-            micrometeoriteAdaptation.AddLocalisation("MICROMETEORITE ADAPTATION", "The first time you are hit each turn, gain one energy next turn. The first time you take hull damage each turn, gain one additional energy next turn.");
-            registry.RegisterArtifact(micrometeoriteAdaptation);
+            breakthrough = new ExternalArtifact(Name + "artifacts.Breakthrough", typeof(Breakthrough), sprites["micrometeorite_adaptation"]);
+            breakthrough.AddLocalisation("BREAKTHROUGH", "The first time you are hit each turn, gain one energy next turn. If this hit was on the telescope, gain 2 energy instead next turn. The first time you take hull damage each turn, gain one additional energy next turn.");
+            registry.RegisterArtifact(breakthrough);
         }
 
         public void LoadManifest(IShipRegistry shipRegistry)
@@ -131,14 +136,38 @@ namespace clay.StarshotShip
                 return;
             var starshotShip = new ExternalStarterShip(Name + ".Starter",
                 starshot.GlobalName,
-                startingArtifacts: new ExternalArtifact[] { micrometeoriteAdaptation },
+                startingArtifacts: new ExternalArtifact[] { breakthrough },
                 exclusiveArtifacts: new ExternalArtifact[] {},
-                nativeStartingArtifacts: new Type[] { typeof(ShieldPrep), typeof(RadarSubwoofer) }
+                nativeStartingArtifacts: new Type[] { typeof(ShieldPrep) },
+                nativeStartingCards: new Type[] { typeof(BasicShieldColorless), typeof(DodgeColorless), typeof(CannonColorless) },
+                startingCards: new ExternalCard[] { micrometeoriteAdaptation }
             );
 
             //starshotShip.AddLocalisation("Starshot", "This sciense vessel was originally intended to launch probes into deep space using its laser array. Some \"creative engineering\" has converted the laser array into a laser cannon.");
             starshotShip.AddLocalisation("Starshot", "This sciense vessel was built to withstand repeated meteorite strikes. As its pilot, don't be afraid to take a hit.");
             registry.RegisterStartership(starshotShip);
+        }
+
+        public void LoadManifest(IDeckRegistry registry)
+        {
+            int color = 0;
+            unchecked { color = (int)0xffcbad27; }
+
+            starshotDeck = new ExternalDeck(
+                Name + ".deck",
+                System.Drawing.Color.FromArgb(color),
+                System.Drawing.Color.White,
+                sprites["starshot_card_art"],
+                sprites["starshot_card_frame"],
+                null);
+            registry.RegisterDeck(starshotDeck);
+        }
+
+        public void LoadManifest(ICardRegistry registry)
+        {
+            micrometeoriteAdaptation = new ExternalCard(Name + ".cards.MicrometeoriteAdaptation", typeof(MicrometeoriteAdaptation), sprites["starshot_card_art"], starshotDeck);
+            micrometeoriteAdaptation.AddLocalisation("Mirror Actuators");
+            registry.RegisterCard(micrometeoriteAdaptation);
         }
 
         [HarmonyPrefix]
